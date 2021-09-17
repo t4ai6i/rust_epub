@@ -1,28 +1,37 @@
 use std::path::Path;
 use std::io::Read;
 use std::fs::File;
-use roxmltree::Document;
+use roxmltree::{Document, Node};
 use tokio::fs::File as TokioFile;
 use anyhow::{Result, Context};
 use zip::ZipArchive;
 use zip::result::ZipResult;
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug)]
 pub struct ContentOpf {
     manifests: Vec<Manifest>,
     spines: Vec<Spine>,
 }
 
-#[derive(Debug, Default, PartialEq)]
-pub struct Manifest {
-    id: String,
-    href: String,
-    media_type: String,
+impl Default for ContentOpf {
+    fn default() -> Self {
+        Self {
+            manifests: Vec::new(),
+            spines: Vec::new(),
+        }
+    }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug)]
+pub struct Manifest {
+    id: Result<String>,
+    href: Result<String>,
+    media_type: Result<String>,
+}
+
+#[derive(Debug)]
 pub struct Spine {
-    idref: String,
+    idref: Result<String>,
 }
 
 impl ContentOpf {
@@ -30,15 +39,19 @@ impl ContentOpf {
         let doc = Document::parse(xml)?;
         let nodes = doc.root_element().children();
         let mut content_opf = ContentOpf::default();
+        let get_attribute_value = |node: &Node, key: &str|
+            node.attribute(key)
+                .with_context(|| format!("Not found :{}", key))
+                .map(|x| x.to_string());
         for node in nodes {
             match node.tag_name().name() {
                 "manifest" => {
                     let manifests = node.children()
                         .filter(|x| x.is_element())
                         .map(|manifest| Manifest {
-                            id: manifest.attribute("id").unwrap().to_string(),
-                            href: manifest.attribute("href").unwrap().to_string(),
-                            media_type: manifest.attribute("media-type").unwrap().to_string(),
+                            id: get_attribute_value(&manifest, "id"),
+                            href: get_attribute_value(&manifest, "href"),
+                            media_type: get_attribute_value(&manifest, "media-type"),
                         })
                         .collect::<Vec<Manifest>>();
                     content_opf = ContentOpf {
@@ -50,7 +63,7 @@ impl ContentOpf {
                     let spines = node.children()
                         .filter(|x| x.is_element())
                         .map(|spine| Spine {
-                            idref: spine.attribute("idref").unwrap().to_string(),
+                            idref: get_attribute_value(&spine, "idref"),
                         })
                         .collect::<Vec<Spine>>();
                     content_opf = ContentOpf {
@@ -104,7 +117,7 @@ impl Epub {
     /// Returns the manifest by idref
     pub fn manifest_by_idref(&self, idref: &str) -> Result<&Manifest> {
         self.content_opf.manifests.iter()
-            .find(|manifest| manifest.id.eq(idref))
+            .find(|manifest| manifest.id.is_ok() && manifest.id.as_ref().unwrap().eq(idref))
             .with_context(|| format!("Not found idref. {}", idref))
     }
 
@@ -188,8 +201,9 @@ mod tests {
     #[tokio::test]
     async fn success_spine_by_index() {
         let epub = Epub::new("tests/resources/essential-scala.epub").await.unwrap();
-        let actual = epub.spine_by_index(0).unwrap();
-        assert_eq!(*actual, Spine { idref: "cover_xhtml".to_string() });
+        let spine = epub.spine_by_index(0).unwrap();
+        let actual = spine.idref.as_ref().unwrap();
+        assert_eq!(actual, "cover_xhtml");
     }
 
     #[tokio::test]
@@ -202,12 +216,13 @@ mod tests {
     #[tokio::test]
     async fn success_manifest_by_idref() {
         let epub = Epub::new("tests/resources/essential-scala.epub").await.unwrap();
-        let actual = epub.manifest_by_idref("cover_xhtml").unwrap();
-        assert_eq!(*actual, Manifest {
-            id: "cover_xhtml".to_string(),
-            href: "cover.xhtml".to_string(),
-            media_type: "application/xhtml+xml".to_string(),
-        });
+        let manifest = epub.manifest_by_idref("cover_xhtml").unwrap();
+        let actual = manifest.id.as_ref().unwrap();
+        assert_eq!(actual, "cover_xhtml");
+        let actual = manifest.href.as_ref().unwrap();
+        assert_eq!(actual, "cover.xhtml");
+        let actual = manifest.media_type.as_ref().unwrap();
+        assert_eq!(actual, "application/xhtml+xml");
     }
 
     #[tokio::test]
