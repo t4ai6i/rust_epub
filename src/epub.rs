@@ -6,6 +6,8 @@ use tokio::fs::File as TokioFile;
 use anyhow::{Result, Context};
 use zip::ZipArchive;
 use zip::result::ZipResult;
+use mime::Mime;
+use std::str::FromStr;
 
 #[derive(Debug)]
 pub struct ContentOpf {
@@ -26,7 +28,7 @@ impl Default for ContentOpf {
 pub struct Manifest {
     id: Result<String>,
     href: Result<String>,
-    media_type: Result<String>,
+    media_type: Result<Mime>,
 }
 
 #[derive(Debug)]
@@ -39,19 +41,24 @@ impl ContentOpf {
         let doc = Document::parse(xml)?;
         let nodes = doc.root_element().children();
         let mut content_opf = ContentOpf::default();
-        let get_attribute_value = |node: &Node, key: &str|
+        let to_string = |node: &Node, key: &str|
             node.attribute(key)
                 .with_context(|| format!("Not found :{}", key))
                 .map(|x| x.to_string());
+        let to_mime = |node: &Node, key: &str| {
+            let mime_type = node.attribute(key)
+                .with_context(|| format!("Not found :{}", key))?;
+            Mime::from_str(mime_type).with_context(|| format!("Failed parse: {}", mime_type))
+        };
         for node in nodes {
             match node.tag_name().name() {
                 "manifest" => {
                     let manifests = node.children()
                         .filter(|x| x.is_element())
                         .map(|manifest| Manifest {
-                            id: get_attribute_value(&manifest, "id"),
-                            href: get_attribute_value(&manifest, "href"),
-                            media_type: get_attribute_value(&manifest, "media-type"),
+                            id: to_string(&manifest, "id"),
+                            href: to_string(&manifest, "href"),
+                            media_type: to_mime(&manifest, "media-type"),
                         })
                         .collect::<Vec<Manifest>>();
                     content_opf = ContentOpf {
@@ -63,7 +70,7 @@ impl ContentOpf {
                     let spines = node.children()
                         .filter(|x| x.is_element())
                         .map(|spine| Spine {
-                            idref: get_attribute_value(&spine, "idref"),
+                            idref: to_string(&spine, "idref"),
                         })
                         .collect::<Vec<Spine>>();
                     content_opf = ContentOpf {
@@ -84,8 +91,6 @@ pub struct Epub {
 }
 
 impl Epub {
-    // TODO: 実データの取得。media_typeがapplication/xhtml+xmlだったらStringとして取得。image/pngだったらVec<u8>として取得。
-    // TODO: mime crate. https://docs.rs/mime/0.3.16/mime/
     /// Create Epub
     pub async fn new(path: impl AsRef<Path>) -> Result<Self> {
         let mut epub = Epub::open_zip_archive(path).await?;
@@ -222,7 +227,7 @@ mod tests {
         let actual = manifest.href.as_ref().unwrap();
         assert_eq!(actual, "cover.xhtml");
         let actual = manifest.media_type.as_ref().unwrap();
-        assert_eq!(actual, "application/xhtml+xml");
+        assert_eq!(actual, &Mime::from_str("application/xhtml+xml").unwrap());
     }
 
     #[tokio::test]
