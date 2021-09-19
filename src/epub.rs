@@ -46,9 +46,11 @@ impl ContentOpf {
                 .with_context(|| format!("Not found :{}", key))
                 .map(|x| x.to_string());
         let to_mime = |node: &Node, key: &str| {
-            let mime_type = node.attribute(key)
-                .with_context(|| format!("Not found :{}", key))?;
-            Mime::from_str(mime_type).with_context(|| format!("Failed parse: {}", mime_type))
+            node.attribute(key)
+                .with_context(|| format!("Not found :{}", key))
+                .map(|x|
+                    Mime::from_str(x).with_context(|| format!("Failed parse: {}", x))
+                )?
         };
         for node in nodes {
             match node.tag_name().name() {
@@ -139,15 +141,13 @@ impl Epub {
         container.read_to_string(&mut container_buf)?;
         let doc = Document::parse(&container_buf)?;
         doc.root_element().children()
-            .filter_map(|n| {
-                let rootfile = n.descendants()
-                    .find(|n| n.tag_name().name() == "rootfile");
-                rootfile.map(|n| {
-                    n.attribute("full-path")
-                })?
-            })
+            .filter_map(|n|
+                n.descendants()
+                    .find(|n| n.tag_name().name() == "rootfile")
+                    .map(|n| n.attribute("full-path"))?
+                    .map(|s| s.to_string())
+            )
             .next()
-            .map(|p| p.to_string())
             .context("Not exist content.opf")
     }
 
