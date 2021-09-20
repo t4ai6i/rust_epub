@@ -101,7 +101,7 @@ impl Epub {
         //     dbg!(file.name());
         // }
         let content_opf_path = Epub::content_opf_path(&mut epub)?;
-        let content_opf = Epub::content_opf(&mut epub, &content_opf_path)?;
+        let content_opf = Epub::read_content_to_string(&mut epub, &content_opf_path)?;
         let content_opf = ContentOpf::new(&content_opf)?;
         Ok(Epub {
             body: epub,
@@ -128,18 +128,16 @@ impl Epub {
             .with_context(|| format!("Not found idref. {}", idref))
     }
 
-    fn content_opf(epub: &mut ZipArchive<File>, content_opf_path: &str) -> Result<String> {
-        let content_opf = &mut epub.by_name(content_opf_path)?;
-        let mut content_opf_buf = String::new();
-        content_opf.read_to_string(&mut content_opf_buf)?;
-        Ok(content_opf_buf)
+    pub fn read_content_to_string(epub: &mut ZipArchive<File>, path: &str) -> Result<String> {
+        let content = &mut epub.by_name(path)?;
+        let mut string_buf = String::new();
+        content.read_to_string(&mut string_buf)?;
+        Ok(string_buf)
     }
 
     fn content_opf_path(epub: &mut ZipArchive<File>) -> Result<String> {
-        let container = &mut epub.by_name("META-INF/container.xml")?;
-        let mut container_buf = String::new();
-        container.read_to_string(&mut container_buf)?;
-        let doc = Document::parse(&container_buf)?;
+        let container = Epub::read_content_to_string(epub, "META-INF/container.xml")?;
+        let doc = Document::parse(&container)?;
         doc.root_element().children()
             .filter_map(|n|
                 n.descendants()
@@ -185,11 +183,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn success_epub_content_opf() {
+    async fn success_epub_read_content_to_string() {
         let path = "tests/resources/essential-scala.epub";
         let mut archive = Epub::open_zip_archive(path).await.unwrap();
         let content_opf_path = Epub::content_opf_path(&mut archive).unwrap();
-        let actual = Epub::content_opf(&mut archive, &content_opf_path);
+        let actual = Epub::read_content_to_string(&mut archive, &content_opf_path);
         assert!(actual.is_ok());
     }
 
