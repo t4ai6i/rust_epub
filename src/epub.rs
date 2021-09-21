@@ -3,7 +3,7 @@ use std::io::Read;
 use std::fs::File;
 use roxmltree::{Document, Node};
 use tokio::fs::File as TokioFile;
-use anyhow::{Result, Context};
+use anyhow::{Result, Context, ensure, bail};
 use zip::ZipArchive;
 use zip::result::ZipResult;
 use mime::Mime;
@@ -37,7 +37,7 @@ pub struct Spine {
 }
 
 impl ContentOpf {
-    pub fn new(xml: &str) -> Result<Self> {
+    fn new(xml: &str) -> Result<Self> {
         let doc = Document::parse(xml)?;
         let nodes = doc.root_element().children();
         let mut content_opf = ContentOpf::default();
@@ -109,26 +109,42 @@ impl Epub {
         })
     }
 
+    pub fn read_content_by_index_of_spine(&mut self, spine_index: usize) -> Result<String> {
+        let spine = self.spine_by_index(spine_index)?;
+        let manifest = self.manifest_by_idref(spine)?;
+        let href = match &manifest.href {
+            Ok(v) => v.to_string(),
+            Err(e) => bail!(format!("Invalid Manifest.href. {:?}", e)),
+        };
+        Epub::read_content_to_string(&mut self.body, &href)
+    }
+
     /// Returns length of spines
-    pub fn spines_len(&self) -> usize {
+    fn spines_len(&self) -> usize {
         self.content_opf.spines.len()
     }
 
     /// Returns the Spine by index
-    pub fn spine_by_index(&self, index: usize) -> Result<&Spine> {
+    fn spine_by_index(&self, index: usize) -> Result<&Spine> {
         self.content_opf.spines.iter()
             .nth(index)
             .with_context(|| format!("Index out of bounds. {}/{}", index, self.content_opf.spines.len()))
     }
 
     /// Returns the manifest by idref
-    pub fn manifest_by_idref(&self, idref: &str) -> Result<&Manifest> {
+    fn manifest_by_idref(&self, spine: &Spine) -> Result<&Manifest> {
+        ensure!(
+            spine.idref.as_ref().is_ok(),
+            format!("Spine.idref is error. {}", spine.idref.as_ref().err().unwrap())
+        );
+
+        let idref = spine.idref.as_ref().unwrap();
         self.content_opf.manifests.iter()
             .find(|manifest| manifest.id.is_ok() && manifest.id.as_ref().unwrap().eq(idref))
             .with_context(|| format!("Not found idref. {}", idref))
     }
 
-    pub fn read_content_to_string(epub: &mut ZipArchive<File>, path: &str) -> Result<String> {
+    fn read_content_to_string(epub: &mut ZipArchive<File>, path: &str) -> Result<String> {
         let content = &mut epub.by_name(path)?;
         let mut string_buf = String::new();
         content.read_to_string(&mut string_buf)?;
@@ -160,6 +176,7 @@ impl Epub {
 mod tests {
     use super::*;
     use tokio::io::AsyncReadExt;
+    use anyhow::anyhow;
 
     #[tokio::test]
     async fn success_read_epub() {
@@ -172,6 +189,22 @@ mod tests {
     async fn failure_read_non_existing_epub() {
         let actual = Epub::new("non_existing.epub").await;
         assert!(actual.is_err());
+    }
+
+    #[tokio::test]
+    async fn success_read_content_by_index_of_spine() {
+        let mut epub = Epub::new("tests/resources/essential-scala.epub").await.unwrap();
+        let actual =  epub.read_content_by_index_of_spine(0);
+        assert!(actual.is_ok());
+        let actual = actual.unwrap();
+        assert_eq!(actual, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\">\n<head>\n  <meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\" />\n  <meta http-equiv=\"Content-Style-Type\" content=\"text/css\" />\n  <meta name=\"generator\" content=\"pandoc\" />\n  <title>Essential Scala</title>\n  <link rel=\"stylesheet\" type=\"text/css\" href=\"stylesheet.css\" />\n</head>\n<body>\n<div id=\"cover-image\">\n<img src=\"media/epub-cover.png\" alt=\"cover image\" />\n</div>\n</body>\n</html>\n\n");
+    }
+
+    #[tokio::test]
+    #[should_panic(expected = "called `Result::unwrap()` on an `Err` value: Index out of bounds. 100/15")]
+    async fn failure_read_content_by_index_of_spine() {
+        let mut epub = Epub::new("tests/resources/essential-scala.epub").await.unwrap();
+        epub.read_content_by_index_of_spine(100).unwrap();
     }
 
     #[tokio::test]
@@ -219,7 +252,10 @@ mod tests {
     #[tokio::test]
     async fn success_manifest_by_idref() {
         let epub = Epub::new("tests/resources/essential-scala.epub").await.unwrap();
-        let manifest = epub.manifest_by_idref("cover_xhtml").unwrap();
+        let spine = Spine {
+            idref: Ok("cover_xhtml".to_string())
+        };
+        let manifest = epub.manifest_by_idref(&spine).unwrap();
         let actual = manifest.id.as_ref().unwrap();
         assert_eq!(actual, "cover_xhtml");
         let actual = manifest.href.as_ref().unwrap();
@@ -229,9 +265,12 @@ mod tests {
     }
 
     #[tokio::test]
-    #[should_panic(expected = "called `Result::unwrap()` on an `Err` value: Not found idref. hogehoge")]
+    #[should_panic(expected = "called `Result::unwrap()` on an `Err` value: Spine.idref is error. hogehoge")]
     async fn failure_manifest_by_idref() {
         let epub = Epub::new("tests/resources/essential-scala.epub").await.unwrap();
-        epub.manifest_by_idref("hogehoge").unwrap();
+        let spine = Spine {
+            idref: Err(anyhow!("hogehoge".to_string()))
+        };
+        epub.manifest_by_idref(&spine).unwrap();
     }
 }
