@@ -15,4 +15,4 @@ tokio = { version = "1.10.0", features = ["full"] }
 zip = "0.5.13"
 roxmltree = "0.14.1"
 mime = "0.3.16"
-iced = { version = "0.3.0", features = ["image", "debug"] }
+iced = { version = "0.3.0", features = ["image", "debug", "tokio"] }

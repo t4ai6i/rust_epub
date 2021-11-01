@@ -35,7 +35,7 @@ mod tests {
 
     #[tokio::test]
     async fn success_open_zip() {
-        let path = "tests/resources/essential-scala.epub";
+        let path = "resources/epub/essential-scala.epub";
         let archive = open_zip(path).await.unwrap();
         // for i in 0..archive.len() {
         //     let file = archive.by_index(i).unwrap();
@@ -53,7 +53,7 @@ mod tests {
 
     #[tokio::test]
     async fn success_read_to_string() {
-        let path = "tests/resources/essential-scala.epub";
+        let path = "resources/epub/essential-scala.epub";
         let mut archive = open_zip(path).await.unwrap();
         let path = "META-INF/container.xml";
         let actual = read_to_string(&mut archive, path).unwrap();
@@ -62,7 +62,7 @@ mod tests {
 
     #[tokio::test]
     async fn failure_read_to_string() {
-        let path = "tests/resources/essential-scala.epub";
+        let path = "resources/epub/essential-scala.epub";
         let mut archive = open_zip(path).await.unwrap();
         let path = "nothing";
         let actual = read_to_string(&mut archive, path);
@@ -71,7 +71,7 @@ mod tests {
 
     #[tokio::test]
     async fn success_read_to_end() {
-        let path = "tests/resources/essential-scala.epub";
+        let path = "resources/epub/essential-scala.epub";
         let mut archive = open_zip(path).await.unwrap();
         let path = "media/epub-cover.png";
         let actual = read_to_end(&mut archive, path).unwrap();
@@ -80,7 +80,7 @@ mod tests {
 
     #[tokio::test]
     async fn failure_read_to_end() {
-        let path = "tests/resources/essential-scala.epub";
+        let path = "resources/epub/essential-scala.epub";
         let mut archive = open_zip(path).await.unwrap();
         let path = "nothing";
         let actual = read_to_end(&mut archive, path);

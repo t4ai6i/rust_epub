@@ -1,6 +1,5 @@
 use iced::{executor, Application, Settings, Element, Command, Clipboard, Image, Result, Text, HorizontalAlignment, Column, Length, Align, Font};
 use iced::image::Handle;
-use rust_epub::epub::Epub;
 
 struct GUI {
     font: Font,
@@ -12,12 +11,11 @@ impl Application for GUI {
     type Flags = ();
 
     fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
-        let mut epub = Epub::new("examples/resources/epub/essential-scala.epub").await.unwrap();
         (
             GUI {
                 font: Font::External {
                     name: "Mamelon-3-Hi-Regular.otf",
-                    bytes: include_bytes!("resources/font/Mamelon-3-Hi-Regular.otf"),
+                    bytes: include_bytes!("../resources/font/Mamelon-3-Hi-Regular.otf"),
                 }
             },
             Command::none(),
@@ -33,7 +31,7 @@ impl Application for GUI {
     }
 
     fn view(&mut self) -> Element<'_, Self::Message> {
-        let image = include_bytes!("resources/media/epub-cover.png");
+        let image = include_bytes!("../resources/media/epub-cover.png");
         let image = image.to_vec();
         let handle = Handle::from_memory(image);
         let image = Image::new(handle);

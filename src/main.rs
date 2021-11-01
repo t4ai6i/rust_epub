@@ -1,10 +1,9 @@
-use anyhow::{Result};
-use rust_epub::epub::Epub;
+use iced::{Application, Result, Settings};
+use rust_epub::iced::EpubViewer;
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    // epubを読み込む
-    let epub = Epub::new("tests/resources/essential-scala.epub").await?;
-    dbg!(&epub.content_opf);
-    Ok(())
+fn main() -> Result {
+    EpubViewer::run(Settings {
+        default_font: Some(include_bytes!("../resources/font/Mamelon-3-Hi-Regular.otf")),
+        ..Settings::default()
+    })
 }

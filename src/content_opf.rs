@@ -25,6 +25,7 @@ impl Default for ContentOpf {
 }
 
 impl ContentOpf {
+    // TODO: タイトル・著者・発行年などのメタ情報も含めるロジックを実装する
     pub fn new(xml: &str) -> Result<Self> {
         let doc = Document::parse(xml)?;
         let nodes = doc.root_element().children();
@@ -98,7 +99,7 @@ mod tests {
 
     #[tokio::test]
     async fn success_content_opf_path() {
-        let path = "tests/resources/essential-scala.epub";
+        let path = "resources/epub/essential-scala.epub";
         let mut archive = open_zip(path).await.unwrap();
         let actual = ContentOpf::content_opf_path(&mut archive).unwrap();
         assert_eq!(&actual, "content.opf");
@@ -106,7 +107,7 @@ mod tests {
 
     #[tokio::test]
     async fn success_content_opf_new() {
-        let mut content_opf_xml = File::open("tests/resources/epub_content_opf.xml").await.unwrap();
+        let mut content_opf_xml = File::open("resources/xml/epub_content_opf.xml").await.unwrap();
         let mut content_opf = String::new();
         content_opf_xml.read_to_string(&mut content_opf).await.unwrap();
         let content_opf = ContentOpf::new(&content_opf).unwrap();
