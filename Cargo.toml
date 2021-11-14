@@ -16,3 +16,4 @@ zip = "0.5.13"
 roxmltree = "0.14.1"
 mime = "0.3.16"
 iced = { version = "0.3.0", features = ["image", "debug", "tokio"] }
+iced_native = "0.4.0"

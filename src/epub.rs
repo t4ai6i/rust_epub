@@ -4,7 +4,7 @@ use anyhow::Result;
 use crate::content_opf::ContentOpf;
 use crate::zip_utils::{open_zip, read_to_end, read_to_string};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct Epub {
     pub table_of_contents: Vec<String>,
     pub xhtml: HashMap<String, String>,
