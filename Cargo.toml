@@ -1,7 +1,6 @@
 [package]
 name = "rust_epub"
 version = "0.1.0"
-authors = ["Tomoya Igarashi <tomoya.igarashi.0510@gmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
