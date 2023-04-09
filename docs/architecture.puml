@@ -1,0 +1,101 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+package "use_case" {
+    package "interface" {
+        interface ListEpubUseCase {
+            -&self
+            +execute(&self) -> Vec<EpubPath>
+        }
+
+        interface LoadEpubUseCase {
+            -&self
+            +execute(&self, epub_path: EpubPath) -> Result<Epub>
+        }
+    }
+
+    package "interactor" {
+        class ListEpubInteractor {
+            -&self
+            +epub_repo: EpubRepository
+            +new(epub_repo: EpubRepository) -> Self
+        }
+
+        class LoadEpubInteractor {
+            -&self
+            +epub_repo: EpubRepository
+            +new(epub_repo: EpubRepository) -> Self
+        }
+    }
+
+    ListEpubUseCase <|-- ListEpubInteractor
+
+    LoadEpubUseCase <|-- LoadEpubInteractor
+}
+
+package "infrastructure" {
+    class EpubRepositoryImpl {
+        -&self
+        +list() -> Vec<EpubPath>
+        +load(epub_path: EpubPath) -> Result<Epub>
+    }
+}
+
+package "domain" {
+    package "repository" {
+
+        interface EpubRepository {
+            -&self
+            +list() -> Vec<EpubPath>
+            +load(epub_path: EpubPath) -> Result<Epub>
+        }
+
+        ListEpubInteractor ..> EpubRepository
+        LoadEpubInteractor ..> EpubRepository
+
+        EpubRepository <|-- EpubRepositoryImpl
+    }
+
+    package "entity" {
+        enum EpubPath {
+            LocalPath
+            URL
+            NFTAddress
+        }
+
+        class Epub {
+            +new(path: impl AsRef<Path>) -> Result<Self>
+            +number_of_table_of_contents(&self) -> usize
+            +content_opf: ContentOpf
+        }
+
+        class ContentOpf {
+            +manifest_items: Vec<ManifestItem>
+            +spine_item_refs: Vec<SpineItemRef>
+        }
+
+        enum ManifestItem {
+            None
+            Documentation
+            Image
+        }
+
+        class SpineItemRef {
+            +idref: String
+        }
+
+        EpubRepository ..> Epub
+        EpubRepository ..> EpubPath
+        EpubRepositoryImpl ..> Epub
+        EpubRepositoryImpl ..> EpubPath
+
+        ListEpubUseCase ..> EpubPath
+        LoadEpubUseCase ..> EpubPath
+
+        Epub "1" *-- "1" ContentOpf
+        ContentOpf "1" *-- "*" ManifestItem
+        ContentOpf "1" *-- "*" SpineItemRef
+    }
+}
+
+@enduml

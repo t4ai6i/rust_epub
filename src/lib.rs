@@ -1,5 +1,4 @@
-pub mod epub;
-pub mod content_opf;
-pub mod manifest;
-pub mod spine;
-mod zip_utils;
+pub mod domain;
+pub mod infrastructure;
+pub mod use_case;
+pub mod utils;

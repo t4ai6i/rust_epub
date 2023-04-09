@@ -1,10 +1,7 @@
-use std::fs::File;
-use std::io::Read;
-use std::path::Path;
-use tokio::fs::File as TokioFile;
-use zip::ZipArchive;
-use zip::result::ZipResult;
 use anyhow::Result;
+use std::{fs::File, io::Read, path::Path};
+use tokio::fs::File as TokioFile;
+use zip::{result::ZipResult, ZipArchive};
 
 /// open zip archive file
 pub async fn open_zip(path: impl AsRef<Path>) -> ZipResult<ZipArchive<File>> {
