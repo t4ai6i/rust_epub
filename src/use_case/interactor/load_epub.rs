@@ -10,9 +10,9 @@ pub struct LoadEpubInteractor<R> {
     repository: R,
 }
 
-impl<'a, R> LoadEpubInteractor<R>
+impl<R> LoadEpubInteractor<R>
 where
-    R: EpubRepository<'a>,
+    R: EpubRepository,
 {
     pub fn new(repository: R) -> Self {
         Self { repository }
@@ -20,11 +20,11 @@ where
 }
 
 #[async_trait]
-impl<'a: 'b, 'b, R> LoadEpubUseCase<'a> for LoadEpubInteractor<R>
+impl<R> LoadEpubUseCase for LoadEpubInteractor<R>
 where
-    R: EpubRepository<'b> + Sync + Send,
+    R: EpubRepository + Sync + Send,
 {
-    async fn execute(&self, epub_path: EpubPath<'a>) -> Result<Epub> {
+    async fn execute(&self, epub_path: EpubPath<'_>) -> Result<Epub> {
         self.repository.load(epub_path).await
     }
 }

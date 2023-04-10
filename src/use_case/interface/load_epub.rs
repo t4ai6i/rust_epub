@@ -3,6 +3,6 @@ use anyhow::Result;
 use async_trait::async_trait;
 
 #[async_trait]
-pub trait LoadEpubUseCase<'a> {
-    async fn execute(&self, epub_path: EpubPath<'a>) -> Result<Epub>;
+pub trait LoadEpubUseCase {
+    async fn execute(&self, epub_path: EpubPath<'_>) -> Result<Epub>;
 }

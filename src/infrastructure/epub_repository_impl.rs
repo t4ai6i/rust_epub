@@ -22,8 +22,8 @@ impl EpubRepositoryImpl {
 }
 
 #[async_trait]
-impl<'a> EpubRepository<'a> for EpubRepositoryImpl {
-    async fn load(&self, epub_path: EpubPath<'a>) -> Result<Epub> {
+impl EpubRepository for EpubRepositoryImpl {
+    async fn load(&self, epub_path: EpubPath<'_>) -> Result<Epub> {
         match epub_path {
             LocalPath(path) => {
                 let zip = open_zip(path).await?;
