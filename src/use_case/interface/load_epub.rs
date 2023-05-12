@@ -4,5 +4,5 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub trait LoadEpubUseCase {
-    async fn execute(&self, epub_path: EpubPath<'_>) -> Result<Epub>;
+    async fn execute(&self, epub_path: &EpubPath) -> Result<Epub>;
 }

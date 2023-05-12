@@ -1,1 +1,1 @@
-pub(crate) mod epub_repository_impl;
+pub mod epub_repository_impl;

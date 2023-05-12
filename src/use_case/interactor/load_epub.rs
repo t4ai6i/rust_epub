@@ -6,25 +6,25 @@ use crate::{
 use anyhow::Result;
 use async_trait::async_trait;
 
-pub struct LoadEpubInteractor<R> {
-    repository: R,
+pub struct LoadEpubInteractor<'a, R> {
+    repository: &'a R,
 }
 
-impl<R> LoadEpubInteractor<R>
+impl<'a, R> LoadEpubInteractor<'a, R>
 where
     R: EpubRepository,
 {
-    pub fn new(repository: R) -> Self {
+    pub fn new(repository: &'a R) -> Self {
         Self { repository }
     }
 }
 
 #[async_trait]
-impl<R> LoadEpubUseCase for LoadEpubInteractor<R>
+impl<'a, R> LoadEpubUseCase for LoadEpubInteractor<'a, R>
 where
     R: EpubRepository + Sync + Send,
 {
-    async fn execute(&self, epub_path: EpubPath<'_>) -> Result<Epub> {
+    async fn execute(&self, epub_path: &EpubPath) -> Result<Epub> {
         self.repository.load(epub_path).await
     }
 }
@@ -32,16 +32,14 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::entity::epub_path::EpubPath::LocalPath;
     use crate::infrastructure::epub_repository_impl::EpubRepositoryImpl;
 
     #[tokio::test]
     async fn load_epub_interactor_execute() -> Result<()> {
-        let epub_repository = EpubRepositoryImpl::new();
-        let epub_interactor = LoadEpubInteractor::new(epub_repository);
-        let local_path = "resources/epub/essential-scala.epub";
-        let epub_path = LocalPath(local_path);
-        let epub = epub_interactor.execute(epub_path).await;
+        let repository = EpubRepositoryImpl::new();
+        let interactor = LoadEpubInteractor::new(&repository);
+        let epub_path = EpubPath::new("resources/epub/essential-scala.epub");
+        let epub = interactor.execute(&epub_path).await;
         assert!(epub.is_ok());
         Ok(())
     }

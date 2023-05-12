@@ -4,5 +4,6 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub trait EpubRepository {
-    async fn load(&self, epub_path: EpubPath<'_>) -> Result<Epub>;
+    async fn list(&self, epub_path: &EpubPath) -> Result<Vec<EpubPath>>;
+    async fn load(&self, epub_path: &EpubPath) -> Result<Epub>;
 }

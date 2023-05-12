@@ -1,0 +1,34 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+title Listing Epub UI
+
+actor User
+boundary Home
+boundary FileExplorer
+boundary "List Vec<Epub>"
+entity "Core Process"
+collections "Vec<Epub>"
+
+User -> Home: launch
+
+Home -> FileExplorer: open\ndialog
+
+FileExplorer -> "Core Process": pass\ndirectory path
+
+alt is directory path
+    "Core Process" -> "Vec<Epub>": collect\nepub list
+
+    "Core Process" --> FileExplorer: Vec<Epub>
+
+    alt exists Vec<Epub>
+        create "List Vec<Epub>"
+        FileExplorer -> "List Vec<Epub>": display
+    else
+        FileExplorer -> Home: display\nwith message
+    end
+else
+    "Core Process" -> Home: display\nwith message
+end
+
+@enduml

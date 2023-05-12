@@ -5,7 +5,7 @@ package "use_case" {
     package "interface" {
         interface ListEpubUseCase {
             -&self
-            +execute(&self) -> Vec<EpubPath>
+            +execute(&self, epub_path: EpubPath) -> Result<Vec<EpubPath>>
         }
 
         interface LoadEpubUseCase {
@@ -36,7 +36,7 @@ package "use_case" {
 package "infrastructure" {
     class EpubRepositoryImpl {
         -&self
-        +list() -> Vec<EpubPath>
+        +list(epub_path: EpubPath) -> Result<Vec<EpubPath>>
         +load(epub_path: EpubPath) -> Result<Epub>
     }
 }
@@ -46,7 +46,7 @@ package "domain" {
 
         interface EpubRepository {
             -&self
-            +list() -> Vec<EpubPath>
+            +list(epub_path: EpubPath) -> Result<Vec<EpubPath>>
             +load(epub_path: EpubPath) -> Result<Epub>
         }
 
