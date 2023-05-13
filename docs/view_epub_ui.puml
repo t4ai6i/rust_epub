@@ -1,0 +1,29 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+title View Epub UI
+
+actor User
+boundary Home
+boundary FileExplorer
+boundary "View Epub"
+control CoreProcess
+entity Epub
+
+User -> Home: launch
+
+Home -> FileExplorer: open\ndialog
+
+FileExplorer -> CoreProcess: pass\nepub path
+
+CoreProcess -> Epub: load\nepub
+
+CoreProcess --> Home: Result<Epub, String>
+
+alt is ok
+    Home -> "View Epub": display\nepub
+else
+    CoreProcess -> Home: display\nerror message
+end
+
+@enduml
