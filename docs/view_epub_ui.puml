@@ -6,9 +6,9 @@ title View Epub UI
 actor User
 boundary Home
 boundary FileExplorer
-boundary "View Epub"
 control CoreProcess
 entity Epub
+boundary "View Epub"
 
 User -> Home: launch
 
