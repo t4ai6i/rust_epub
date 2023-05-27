@@ -1,11 +1,10 @@
 use anyhow::Result;
-use rust_epub::use_case::interface::load_epub::LoadEpubUseCase;
 use rust_epub::{
     domain::entity::epub_path::EpubPath,
     infrastructure::epub_repository_impl::EpubRepositoryImpl,
     use_case::{
         interactor::{list_epub::ListEpubInteractor, load_epub::LoadEpubInteractor},
-        interface::list_epub::ListEpubUseCase,
+        interface::{list_epub::ListEpubUseCase, load_epub::LoadEpubUseCase},
     },
 };
 
