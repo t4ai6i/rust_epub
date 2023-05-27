@@ -61,7 +61,7 @@ impl EpubRepository for EpubRepositoryImpl {
         match epub_path {
             LocalPath(local_path) => {
                 let zip = open_zip(local_path).await?;
-                Epub::new(zip).await
+                Epub::new(zip)
             }
             Url(_) => {
                 bail!("EpubPath::URL is unimplemented.");

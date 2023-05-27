@@ -10,8 +10,7 @@ pub struct Epub {
 
 impl Epub {
     /// Create Epub
-    // TODO: asyncを付ける必要性について要検討
-    pub async fn new(mut epub: ZipArchive<File>) -> Result<Self> {
+    pub fn new(mut epub: ZipArchive<File>) -> Result<Self> {
         let content_opf = ContentOpf::new(&mut epub)?;
         Ok(Epub { content_opf })
     }
@@ -29,14 +28,14 @@ mod tests {
     #[tokio::test]
     async fn succeeds_in_reading_a_epub_that_exists() -> Result<()> {
         let zip = open_zip("resources/epub/essential-scala.epub").await?;
-        let _ = Epub::new(zip).await?;
+        let _ = Epub::new(zip)?;
         Ok(())
     }
 
     #[tokio::test]
     async fn succeeds_in_getting_number_of_table_of_contents() -> Result<()> {
         let zip = open_zip("resources/epub/essential-scala.epub").await?;
-        let epub = Epub::new(zip).await?;
+        let epub = Epub::new(zip)?;
         let expected = 15;
         let actual = epub.number_of_table_of_contents();
         assert_eq!(actual, expected);
