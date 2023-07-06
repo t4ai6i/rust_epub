@@ -3,27 +3,25 @@
 
 title View Epub UI
 
-actor User
-boundary Home
-boundary FileExplorer
-control CoreProcess
-entity Epub
 boundary "View Epub"
+control Repository
 
-User -> Home: launch
+[-> "View Epub": From Load Epub UI\nwith ID
 
-Home -> FileExplorer: open\ndialog
+"View Epub" -> Repository: get Epub\nwith ID
+Repository -> "View Epub": Result<Epub>
 
-FileExplorer -> CoreProcess: pass\nepub path
-
-CoreProcess -> Epub: load\nepub
-
-CoreProcess --> Home: Result<Epub, String>
-
-alt is ok
-    Home -> "View Epub": display\nepub
+alt is Ok
+    alt First load
+        "View Epub" -> "View Epub": display\ntitle
+    else
+        "View Epub" -> "View Epub": display\nprevious page
+    end
 else
-    CoreProcess -> Home: display\nerror message
+    "View Epub" -> "View Epub": display\nerror message
 end
+
+' TODO: 1, List contents by spine
+' TODO: 2, Embedded image
 
 @enduml

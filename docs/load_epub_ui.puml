@@ -1,0 +1,36 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+title Load Epub UI
+
+actor User
+boundary Home
+boundary FileExplorer
+control CoreProcess
+control LoadInteractor
+control Repository
+
+User -> Home: launch
+
+Home -> FileExplorer: open\ndialog
+
+FileExplorer -> CoreProcess: pass\nEpub path
+
+CoreProcess -> LoadInteractor: load Epub\nwith Epub path
+
+LoadInteractor -> CoreProcess: Result<Epub>
+
+alt is Ok
+    CoreProcess -> Repository: store Epub
+    Repository -> CoreProcess: Result<ID>
+    alt is Ok
+        CoreProcess -> Home: ID
+        Home ->] : To View Epub UI\nwith ID
+    else
+        CoreProcess -> Home: display\nerror message
+    end
+else
+    CoreProcess -> Home: display\nerror message
+end
+
+@enduml
